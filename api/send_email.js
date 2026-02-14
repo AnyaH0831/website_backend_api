@@ -25,7 +25,7 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-app.post("/send", (req, res) => {
+app.post("/api/send_email", (req, res) => {
     const {name, from, subject, message} = req.body;
 
     const fullMessage = `Name: ${name}\nSender's Email: ${from}\nSubject: ${subject}\n\nMessage:\n${message}`;

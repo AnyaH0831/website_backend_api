@@ -1,18 +1,11 @@
 const nodemailer = require("nodemailer");
-const express = require("express");
-const bodyParser = require("body-parser");
-const cors = require("cors");
-const app = express();
 
-// Middleware
-app.use(cors({
-    origin: ['http://localhost:5174', 'http://localhost:5173', 'https://personal-website-renovation.vercel.app'],
-    methods: ['GET', 'POST', 'OPTIONS'],
-    credentials: true
-}));
-
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended:true}));
+// Allowed origins
+const allowedOrigins = [
+    'http://localhost:5174',
+    'http://localhost:5173',
+    'https://personal-website-renovation.vercel.app'
+];
 
 const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -23,37 +16,51 @@ const transporter = nodemailer.createTransport({
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS
     }
-});
-
-// Handle preflight requests
-app.options('*', cors());
-
-app.post("/", (req, res) => {
-    const {name, from, subject, message} = req.body;
-
-    const fullMessage = `Name: ${name}\nSender's Email: ${from}\nSubject: ${subject}\n\nMessage:\n${message}`;
     
-    console.log("full", fullMessage);
-
-    const mailOptions = {
-        from: process.env.EMAIL_USER, 
-        replyTo: from, 
-        to: process.env.EMAIL_TO,
-        subject: `Website Contact: ${subject}`,
-        text: fullMessage
-    };
-
-    transporter.sendMail(mailOptions, (error, info) => {
-        if (error) {
-            console.error("Error sending email: ", error);
-            res.status(500).json({ error: "Error sending email" });
-        }else{
-            console.log("Email sent: ", info.response);
-            res.status(200).json({ message: "Email sent successfully" });
-        }
-    });
 });
 
+module.exports = async (req, res) => {
+    // Get origin from request
+    const origin = req.headers.origin;
+    
+    // Set CORS headers
+    if (allowedOrigins.includes(origin)) {
+        res.setHeader('Access-Control-Allow-Origin', origin);
+    }
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
 
+    // Handle preflight
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
 
-module.exports = app;
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    try {
+        const {name, from, subject, message} = req.body;
+
+        const fullMessage = `Name: ${name}\nSender's Email: ${from}\nSubject: ${subject}\n\nMessage:\n${message}`;
+        
+        console.log("full", fullMessage);
+
+        const mailOptions = {
+            from: process.env.EMAIL_USER, 
+            replyTo: from, 
+            to: process.env.EMAIL_TO,
+            subject: `Website Contact: ${subject}`,
+            text: fullMessage
+        };
+
+        await transporter.sendMail(mailOptions);
+        console.log("Email sent successfully");
+        res.status(200).json({ message: "Email sent successfully" });
+    } catch (error) {
+        console.error("Error sending email: ", error);
+        res.status(500).json({ error: "Error sending email" });
+    }
+
+};

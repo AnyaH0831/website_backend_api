@@ -7,7 +7,7 @@ const app = express();
 // Middleware
 app.use(cors({
     origin: ['http://localhost:5174', 'http://localhost:5173', 'https://personal-website-renovation.vercel.app'],
-    methods: ['GET', 'POST'],
+    methods: ['GET', 'POST', 'OPTIONS'],
     credentials: true
 }));
 
@@ -25,7 +25,10 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-app.post("/api/send_email", (req, res) => {
+// Handle preflight requests
+app.options('*', cors());
+
+app.post("/", (req, res) => {
     const {name, from, subject, message} = req.body;
 
     const fullMessage = `Name: ${name}\nSender's Email: ${from}\nSubject: ${subject}\n\nMessage:\n${message}`;
@@ -50,6 +53,7 @@ app.post("/api/send_email", (req, res) => {
         }
     });
 });
+
 
 
 module.exports = app;

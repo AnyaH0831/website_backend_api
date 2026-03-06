@@ -4,7 +4,8 @@ const nodemailer = require("nodemailer");
 const allowedOrigins = [
     'http://localhost:5174',
     'http://localhost:5173',
-    'https://personal-website-renovation.vercel.app'
+    'https://personal-website-renovation.vercel.app',
+    'https://www.anyahuang.ca'
 ];
 
 const transporter = nodemailer.createTransport({
